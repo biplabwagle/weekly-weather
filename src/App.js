@@ -1,35 +1,7 @@
 import React from "react";
-function getWeatherIcon(wmoCode) {
-  const icons = new Map([
-    [[0], "☀️"],
-    [[1], "🌤"],
-    [[2], "⛅️"],
-    [[3], "☁️"],
-    [[45, 48], "🌫"],
-    [[51, 56, 61, 66, 80], "🌦"],
-    [[53, 55, 63, 65, 57, 67, 81, 82], "🌧"],
-    [[71, 73, 75, 77, 85, 86], "🌨"],
-    [[95], "🌩"],
-    [[96, 99], "⛈"],
-  ]);
-  const arr = [...icons.keys()].find((key) => key.includes(wmoCode));
-  if (!arr) return "NOT FOUND";
-  return icons.get(arr);
-}
-
-function convertToFlag(countryCode) {
-  const codePoints = countryCode
-    .toUpperCase()
-    .split("")
-    .map((char) => 127397 + char.charCodeAt());
-  return String.fromCodePoint(...codePoints);
-}
-
-function formatDay(dateStr) {
-  return new Intl.DateTimeFormat("en", {
-    weekday: "short",
-  }).format(new Date(dateStr));
-}
+import Input from "./components/Input";
+import Weather from "./components/Weather";
+import { convertToFlag } from "./utils";
 
 class App extends React.Component {
   state = {
@@ -65,26 +37,24 @@ class App extends React.Component {
 
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      console.log(typeof err);
-      console.log(err.message);
       this.setState({ error: err });
     } finally {
       this.setState({ isLoading: false });
     }
   };
 
+  handleChange(e) {
+    this.setState({ location: e.target.value });
+  }
+
   render() {
     return (
       <div className="app">
         <h1>Weekly Weather</h1>
-        <div>
-          <input
-            type="text"
-            placeholder="Search for location"
-            value={this.state.location}
-            onChange={(e) => this.setState({ location: e.target.value })}
-          />
-        </div>
+        <Input
+          location={this.state.location}
+          handleChange={this.handleChange}
+        />
         <button onClick={this.fetchWeather}>
           Get {this.state.location}
           {this.state.location ? `'s` : ""} Weather
@@ -98,52 +68,6 @@ class App extends React.Component {
         )}
         {this.state.error.message && <p>{this.state.error.message}</p>}
       </div>
-    );
-  }
-}
-
-class Weather extends React.Component {
-  render() {
-    const { weather, location } = this.props;
-    const {
-      temperature_2m_max: max,
-      temperature_2m_min: min,
-      time: dates,
-      weathercode: codes,
-    } = weather;
-    return (
-      <div>
-        <h2>Weather {location}</h2>
-        <ul className="weather">
-          {dates.map((date, i) => {
-            return (
-              <Day
-                key={i}
-                date={date}
-                max={max.at(i)}
-                min={min.at(i)}
-                code={codes.at(i)}
-                isToday={i === 0}
-              />
-            );
-          })}
-        </ul>
-      </div>
-    );
-  }
-}
-
-class Day extends React.Component {
-  render() {
-    const { date, max, min, code, isToday } = this.props;
-    return (
-      <li className="day">
-        <span>{getWeatherIcon(code)}</span>
-        <p>{isToday ? "Today" : formatDay(date)}</p>
-        <p>
-          {Math.floor(min)}&deg; &mdash; <strong>{Math.ceil(max)}&deg;</strong>
-        </p>
-      </li>
     );
   }
 }
